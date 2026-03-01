@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Метрики Discord</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <h1>Онлайн в категориях (средние значения)</h1>
+  <div id="content">Загружаю данные...</div>
+
+  <canvas id="myChart" width="400" height="200"></canvas>
+
+  <script>
+    const DATA_URL = 'https://raw.githubusercontent.com/DeadlySunset/metrics-data/main/metrics.json';
+
+    fetch(DATA_URL)
+      .then(res => res.json())
+      .then(data => {
+        let html = '<table><tr><th>Категория</th><th>Средний онлайн сегодня</th><th>За неделю</th></tr>';
+        
+        Object.keys(data).forEach(cat => {
+          // Пока просто выводим, потом доработаем под структуру
+          html += `<tr><td>${cat}</td><td>${data[cat]?.today_avg || '—'}</td><td>${data[cat]?.week_avg || '—'}</td></tr>`;
+        });
+        html += '</table>';
+
+        document.getElementById('content').innerHTML = html || '<p>Нет данных пока</p>';
+
+        // Пример графика (потом адаптируем под реальные данные)
+        new Chart(document.getElementById('myChart'), {
+          type: 'line',
+          data: {
+            labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+            datasets: [{ label: 'Пример онлайн', data: [12, 19, 3, 5, 2, 3, 20], borderColor: 'blue' }]
+          }
+        });
+      })
+      .catch(err => {
+        document.getElementById('content').innerHTML = '<p>Ошибка загрузки: ' + err + '</p>';
+      });
+  </script>
+</body>
+</html>
