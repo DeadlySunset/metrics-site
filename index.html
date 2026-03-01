@@ -5,45 +5,65 @@
   <title>Метрики Discord</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h1 { color: #333; }
+    table { border-collapse: collapse; width: 100%; max-width: 800px; margin: 20px 0; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background: #e0e0e0; }
+    #content { min-height: 100px; }
+    canvas { max-width: 800px; background: white; padding: 10px; border: 1px solid #ddd; }
   </style>
 </head>
 <body>
   <h1>Онлайн в категориях (средние значения)</h1>
   <div id="content">Загружаю данные...</div>
-
-  <canvas id="myChart" width="400" height="200"></canvas>
+  <canvas id="myChart"></canvas>
 
   <script>
     const DATA_URL = 'https://raw.githubusercontent.com/DeadlySunset/metrics-data/main/metrics.json';
 
     fetch(DATA_URL)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        return res.json();
+      })
       .then(data => {
-        let html = '<table><tr><th>Категория</th><th>Средний онлайн сегодня</th><th>За неделю</th></tr>';
-        
-        Object.keys(data).forEach(cat => {
-          // Пока просто выводим, потом доработаем под структуру
-          html += `<tr><td>${cat}</td><td>${data[cat]?.today_avg || '—'}</td><td>${data[cat]?.week_avg || '—'}</td></tr>`;
-        });
-        html += '</table>';
+        const content = document.getElementById('content');
+        let html = '<table><tr><th>Категория</th><th>Сегодня (ср.)</th><th>Эта неделя (ср.)</th><th>Прошлая неделя (ср.)</th></tr>';
 
-        document.getElementById('content').innerHTML = html || '<p>Нет данных пока</p>';
+        if (Object.keys(data).length === 0) {
+          content.innerHTML = '<p style="color: #888;">Нет данных пока. Бот ещё не собрал статистику.</p>';
+        } else {
+          Object.keys(data).forEach(cat => {
+            const catData = data[cat] || {};
+            html += `<tr>
+              <td>${cat}</td>
+              <td>${catData.today_avg?.toFixed(1) || '—'}</td>
+              <td>${catData.this_week_avg?.toFixed(1) || '—'}</td>
+              <td>${catData.last_week_avg?.toFixed(1) || '—'}</td>
+            </tr>`;
+          });
+          content.innerHTML = html + '</table>';
+        }
 
-        // Пример графика (потом адаптируем под реальные данные)
+        // График — пока пример, позже заменим на реальные данные
         new Chart(document.getElementById('myChart'), {
           type: 'line',
           data: {
             labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-            datasets: [{ label: 'Пример онлайн', data: [12, 19, 3, 5, 2, 3, 20], borderColor: 'blue' }]
-          }
+            datasets: [{
+              label: 'Пример онлайн (заменится реальными)',
+              data: [12, 19, 3, 5, 2, 3, 20],
+              borderColor: 'blue',
+              tension: 0.3
+            }]
+          },
+          options: { scales: { y: { beginAtZero: true } } }
         });
       })
       .catch(err => {
-        document.getElementById('content').innerHTML = '<p>Ошибка загрузки: ' + err + '</p>';
+        document.getElementById('content').innerHTML = 
+          '<p style="color: red;">Ошибка загрузки: ' + err.message + '</p>';
       });
   </script>
 </body>
